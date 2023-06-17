@@ -1,0 +1,70 @@
+import cv2 as cv
+import numpy as np
+
+class Map:
+    def __init__(self, position):
+        path = "./maps/easy.bmp"
+        self.__position = position
+        self.__content = cv.imread(path, cv.IMREAD_UNCHANGED)
+        external_bounding_box, internal_bounding_box = self.__create_bounding_box()
+
+        self.__external_bounding_box = external_bounding_box
+        self.__internal_bounding_box = internal_bounding_box
+    
+    def __create_bounding_box(self):
+        imgray = cv.cvtColor(self.__content, cv.COLOR_BGR2GRAY)
+        _, thresh = cv.threshold(imgray, 254, 255, cv.THRESH_BINARY)
+        countours, _ = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+
+        #internal box
+        min_internal_point = max_internal_point = None
+        for c in countours[1]:
+            point = [c[0][0], c[0][1]]
+
+            if min_internal_point == None or point < min_internal_point:
+                min_internal_point = point
+            
+            if max_internal_point == None or point > max_internal_point:
+                max_internal_point = point
+
+        #external box
+        min_external_point = max_external_point = None
+        for c in countours[2]:
+            point = [c[0][0], c[0][1]]
+
+            if min_external_point == None or point < min_external_point:
+                min_external_point = point
+            
+            if max_external_point == None or point > max_external_point:
+                max_external_point = point
+        
+        return [min_external_point, max_external_point], [min_internal_point, max_internal_point]
+    
+    def position_available(self, item_bounding_box):
+        external_min_point, external_max_point = self.__external_bounding_box
+        internal_min_point, internal_max_point = self.__internal_bounding_box
+        item_min_point, item_max_point = item_bounding_box
+
+        outside_internal_box_low = item_min_point[1] > internal_max_point[1]
+        outside_internal_box_top = item_max_point[1] < internal_min_point[1]
+        outside_internal_box_right = item_min_point[0] > internal_max_point[0]
+        outside_internal_box_left = item_max_point[0] < internal_min_point[0]
+
+        outside_internal_box = outside_internal_box_low or outside_internal_box_top or outside_internal_box_right or outside_internal_box_left
+
+        inside_external_box_low = item_max_point[1] < external_max_point[1]
+        inside_external_box_top = item_min_point[1] > external_min_point[1]
+        inside_external_box_right = item_max_point[0] < external_max_point[0]
+        inside_external_box_left = item_min_point[0] > external_min_point[0]
+
+        inside_external_box = inside_external_box_low and inside_external_box_top and inside_external_box_right and inside_external_box_left
+
+        inside_map = outside_internal_box and inside_external_box
+
+        return inside_map
+    
+    def transform(self):
+        pass
+
+    def render(self):
+        return self.__position, self.__content
