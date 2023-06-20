@@ -62,6 +62,121 @@ class Map:
         inside_map = outside_internal_box and inside_external_box
 
         return inside_map
+
+    def __get_front_distance(self, direction, center):
+        external_min_point, external_max_point = self.__external_bounding_box
+        internal_min_point, internal_max_point = self.__internal_bounding_box
+        x, y = center
+        distance = 0
+
+        if direction[0] == 1:
+            if x > external_min_point[0] and x < internal_min_point[0] and y > internal_min_point[1] and y < internal_max_point[1]:
+                #a la izquierda de la caja interna
+                distance = internal_min_point[0] - x
+            else:
+                distance = external_max_point[0] - x
+
+        if direction[0] == -1:
+            if x > internal_max_point[0] and x < external_max_point[0] and y > internal_min_point[1] and y < internal_max_point[1]:
+                #a la derecha de la caja interna
+                distance = x - internal_max_point[0]
+            else:
+                distance = x - external_min_point[0]
+        
+        if direction[1] == 1:
+            if x > internal_min_point[0] and x < internal_max_point[0] and y > external_min_point[1] and y < internal_min_point[1]:
+                #sobre de la caja interna
+                distance = internal_min_point[1] - y
+            else:
+                distance = external_max_point[1] - y
+
+        if direction[1] == -1:
+            if x > internal_min_point[0] and x < internal_max_point[0] and y > internal_max_point[1] and y < external_max_point[1]:
+                #bajo de la caja interna
+                distance = y - internal_max_point[1]
+            else:
+                distance = y - external_min_point[1]
+
+        return distance
+    
+    def __right_distance(self, direction, center):
+        external_min_point, external_max_point = self.__external_bounding_box
+        internal_min_point, internal_max_point = self.__internal_bounding_box
+        x, y = center
+        distance = 0
+
+        if direction[0] == 1:
+            if x > internal_min_point[0] and x < internal_max_point[0] and y > external_min_point[1] and y < internal_min_point[1]:
+                #sobre de la caja interna
+                distance = internal_min_point[1] - y
+            else:
+                distance = external_max_point[1] - y
+
+        if direction[0] == -1:
+            if x > internal_min_point[0] and x < internal_max_point[0] and y > internal_max_point[1] and y < external_max_point[1]:
+                #bajo de la caja interna
+                distance = y - internal_max_point[1]
+            else:
+                distance = y - external_min_point[1]
+
+        if direction[1] == 1:
+            if x > internal_max_point[0] and x < external_max_point[0] and y > internal_min_point[1] and y < internal_max_point[1]:
+                #a la derecha de la caja interna
+                distance = x - internal_max_point[0]
+            else:
+                distance = x - external_min_point[0]
+        
+        if direction[1] == -1:
+            if x > external_min_point[0] and x < internal_min_point[0] and y > internal_min_point[1] and y < internal_max_point[1]:
+                #a la izquierda de la caja interna
+                distance = internal_min_point[0] - x
+            else:
+                distance = external_max_point[0] - x
+
+        return distance
+    
+    def __left_distance(self, direction, center):
+        external_min_point, external_max_point = self.__external_bounding_box
+        internal_min_point, internal_max_point = self.__internal_bounding_box
+        x, y = center
+        distance = 0
+
+        if direction[0] == 1:
+            if x > internal_min_point[0] and x < internal_max_point[0] and y > internal_max_point[1] and y < external_max_point[1]:
+                #bajo de la caja interna
+                distance = y - internal_max_point[1]
+            else:
+                distance = y - external_min_point[1]
+
+        if direction[0] == -1:
+            if x > internal_min_point[0] and x < internal_max_point[0] and y > external_min_point[1] and y < internal_min_point[1]:
+                #sobre de la caja interna
+                distance = internal_min_point[1] - y
+            else:
+                distance = external_max_point[1] - y
+
+        if direction[1] == 1:
+            if x > external_min_point[0] and x < internal_min_point[0] and y > internal_min_point[1] and y < internal_max_point[1]:
+                #a la izquierda de la caja interna
+                distance = internal_min_point[0] - x
+            else:
+                distance = external_max_point[0] - x
+
+        if direction[1] == -1:
+            if x > internal_max_point[0] and x < external_max_point[0] and y > internal_min_point[1] and y < internal_max_point[1]:
+                #a la derecha de la caja interna
+                distance = x - internal_max_point[0]
+            else:
+                distance = x - external_min_point[0]
+
+        return distance
+
+    def get_distances(self, direction, center):
+        front_distance = self.__get_front_distance(direction, center)
+        right_distance = self.__right_distance(direction, center)
+        left_distance = self.__left_distance(direction, center)
+
+        return [front_distance, right_distance, left_distance]
     
     def transform(self):
         pass

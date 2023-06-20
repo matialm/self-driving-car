@@ -11,18 +11,18 @@ class Car:
         self.__speed = 0
         self.__content = cv.imread(path, cv.IMREAD_UNCHANGED)
         self.__transformed_content = self.__content
-        self.direction = [round(math.cos(self.__angle)), round(math.sin(self.__angle))]
+        self.__direction = [round(math.cos(self.__angle)), round(math.sin(self.__angle))]
         self.__map = map
         self.alive = True
         self.distance = 0
-        self.sensors = [
-            0, #front
-            0, #left
-            0 #right
-        ]
         self.__bounding_box = [
             [0,0],
             [self.__content.shape[0], self.__content.shape[1]]
+        ]
+        self.sensors = [
+            0, #front
+            0, #right
+            0 #left
         ]
 
     def __rotate(self):
@@ -51,7 +51,7 @@ class Car:
     
     def __update_speed(self):
         if keyboard.is_pressed("s"):
-            self.__speed += 1
+            self.__speed = 5
         
         if keyboard.is_pressed("a"):
             self.__speed = 0
@@ -79,14 +79,28 @@ class Car:
 
         if not position_available:
             self.alive = False
-    
+        
+        self.__update_sensors(new_bounding_box)
+
+    def __update_sensors(self, bounding_box):
+        min_point, max_point = bounding_box
+        direction = self.__direction
+        map = self.__map
+
+        center_x = int((max_point[0] - min_point[0])/2) + min_point[0]
+        center_y = int((max_point[1] - min_point[1])/2) + min_point[1]
+
+        distances = map.get_distances(direction, (center_x, center_y))
+
+        self.sensors = distances
+
     def transform(self):
         self.__update_rotation()
         self.__update_direction()
         self.__update_speed()
 
-        self.__translate()
         self.__rotate()
+        self.__translate()
     
     def render(self):
         return self.__position, self.__transformed_content
