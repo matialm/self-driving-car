@@ -1,6 +1,7 @@
-from device import Device
 from map import Map
 from car import Car
+from device import Device
+from evolution import Evolution
 import keyboard
 
 class Engine:
@@ -9,18 +10,25 @@ class Engine:
         self.__device = Device(screen_size)
     
     def start(self):
-        start_point = [210, 260]
         map = Map([0, 0])
-        models = []
-        models.append(map)
-        models.append(Car(start_point, map))
+        evolution = Evolution()
+        evolution.create_initial_population()
 
         stop = False
         while not stop:
             if keyboard.is_pressed("escape"):
                 stop = True
-            
-            for model in models:
-                model.transform()
 
+            cars = evolution.get_population()
+
+            for car in cars:
+                if car.is_alive():
+                    car.transform(map)
+
+            models = [map] + cars
             self.__device.render(models)
+
+            everyone_is_dead = all([not car.is_alive() for car in cars])
+
+            if everyone_is_dead:
+                evolution.create_next_generation()
