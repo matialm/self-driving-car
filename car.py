@@ -3,6 +3,7 @@ import math
 import cv2 as cv
 import numpy as np
 import tensorflow as tf
+import sys
 
 class Car:
     def __init__(self):
@@ -68,6 +69,7 @@ class Car:
         self.__transformed_content = cv.warpAffine(image, rotation_matrix, image.shape[1::-1], flags=cv.INTER_LINEAR)
     
     def __update_rotation(self, action):
+        self.__old_angle = self.__angle
         if keyboard.is_pressed("up") or action == "up":
             self.__angle = 90
         
@@ -83,6 +85,18 @@ class Car:
     def __update_direction(self):
         angle = (self.__angle * math.pi) / 180
         self.__direction = [int(math.cos(angle)), -1*int(math.sin(angle))]
+
+        old_angle = (self.__old_angle * math.pi) / 180
+        old_direction = [int(math.cos(old_angle)), -1*int(math.sin(old_angle))]
+
+        if self.__went_forward_first == None:
+            self.__went_forward_first = self.__angle == 0
+
+        if not self.__went_backwards:
+            self.__went_backwards = (old_direction == np.dot(-1, self.__direction)).all()
+
+        if self.__forward_only:
+            self.__forward_only = old_direction == self.__direction
     
     def __update_speed(self, action):
         if keyboard.is_pressed("s") or action == "s":
@@ -90,35 +104,28 @@ class Car:
         
         if keyboard.is_pressed("a") or action == "a":
             self.__speed = 0
-    
+
     def __translate(self, map):
-        new_position = self.__position.copy()
-        new_min_bounding_box_point = self.__bounding_box[0].copy()
-        new_max_bounding_box_point = self.__bounding_box[1].copy()
+        movement = np.dot(self.__speed, self.__direction)
+        position = np.add(self.__position, movement)
 
-        new_position[0] += self.__speed * self.__direction[0]
-        new_position[1] += self.__speed * self.__direction[1]
+        min_bounding_box = np.add(self.__bounding_box[0], movement)
+        max_bounding_box = np.add(self.__bounding_box[1], movement)
 
-        new_min_bounding_box_point[0] += new_position[0]
-        new_min_bounding_box_point[1] += new_position[1]
+        bounding_box = [min_bounding_box, max_bounding_box]
+        position_available = map.position_available(bounding_box)
 
-        new_max_bounding_box_point[0] += new_position[0]
-        new_max_bounding_box_point[1] += new_position[1]
-
-        new_bounding_box = [new_min_bounding_box_point, new_max_bounding_box_point]
-        position_available = map.position_available(new_bounding_box)
-
-        if self.__position != new_position and position_available:
-            self.__distance += abs(new_position[0] - self.__position[0]) + abs(new_position[1] - self.__position[1])
-            self.__position = new_position
+        if position_available:
+            displacement_vector = np.subtract(position, self.__position)
+            self.__distance += math.sqrt(np.dot(displacement_vector, displacement_vector))
+            self.__position = position
+            self.__bounding_box = bounding_box
 
         if not position_available:
             self.__alive = False
-        
-        self.__update_sensors(new_bounding_box, map)
 
-    def __update_sensors(self, bounding_box, map):
-        min_point, max_point = bounding_box
+    def __update_sensors(self, map):
+        min_point, max_point = self.__bounding_box
         direction = self.__direction
 
         center_x = int((max_point[0] - min_point[0])/2) + min_point[0]
@@ -137,8 +144,10 @@ class Car:
 
             if len(weights) > 0:
                 for weight in weights:
-                    #[-1, 1), b > a -> (b - a) * random_sample() + a
-                    item = (1 - (-1)) * np.random.random_sample(weight.shape) + (-1)
+                    #[a, b), b > a -> (b - a) * random_sample() + a
+                    a = -sys.maxsize
+                    b = sys.maxsize
+                    item = (b - a) * np.random.random_sample(weight.shape) + a
                     result.append(item)
         
         return result
@@ -167,12 +176,16 @@ class Car:
     def reset_state(self):
         self.__position = [210, 260]
         self.__angle = 0
+        self.__old_angle = 0
+        self.__went_backwards = False
+        self.__went_forward_first = None
+        self.__forward_only = True
         self.__speed = 5
         self.__transformed_content = self.__content
         self.__direction = [round(math.cos(self.__angle)), round(math.sin(self.__angle))]
         self.__bounding_box = [
-            [0,0],
-            [self.__content.shape[0], self.__content.shape[1]]
+            [self.__position[0], self.__position[1]],
+            [self.__content.shape[0] + self.__position[0], self.__content.shape[1] + self.__position[1]]
         ]
         self.__sensors = [
             0, #front
@@ -211,8 +224,18 @@ class Car:
     
     def get_distance(self):
         return self.__distance
+    
+    def went_backwards(self):
+        return self.__went_backwards
+    
+    def went_forward_only(self):
+        return self.__forward_only
+    
+    def went_forward_first(self):
+        return self.__went_forward_first
 
     def transform(self, map):
+        self.__update_sensors(map)
         action = self.__predict(self.__sensors)
         self.__update_rotation(action)
         self.__update_direction()

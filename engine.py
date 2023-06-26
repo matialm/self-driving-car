@@ -15,6 +15,8 @@ class Engine:
         evolution.create_initial_population()
 
         stop = False
+        epoch = 0
+        max_epoch = 100
         while not stop:
             if keyboard.is_pressed("escape"):
                 stop = True
@@ -29,6 +31,9 @@ class Engine:
             self.__device.render(models)
 
             everyone_is_dead = all([not car.is_alive() for car in cars])
-
-            if everyone_is_dead:
+            
+            if everyone_is_dead or epoch > max_epoch:
+                epoch = 0
                 evolution.create_next_generation()
+            
+            epoch += 1
