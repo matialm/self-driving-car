@@ -3,7 +3,7 @@ import numpy as np
 
 class Device:
     def __init__(self, size):
-        self.__fps = 60
+        self.__fps = 30
         self.__name = "self-driving car"
         self.__size = size
         self.__screen = np.zeros([self.__size[0], self.__size[1], 3])

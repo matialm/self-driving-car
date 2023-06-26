@@ -6,7 +6,7 @@ import sys
 class Evolution:
     def __init__(self):
         self.__initial_population = 5
-        self.__cross_number = 3
+        self.__cross_number = 2
         self.__max_population = self.__initial_population + self.__cross_number
         self.__mutation_rate = 0.05
         self.__population = []
@@ -18,7 +18,7 @@ class Evolution:
             car = item["car"]
             distance = car.get_distance()
             back_score = -10000 if car.went_backwards() else 0
-            forward_first_score = 10000 if car.went_forward_first() else 0
+            forward_first_score = -10000 if car.went_forward_first() else 0
             forward_only_score = -10000 if car.went_forward_only() else 0
             #quiero que vaya para adelante y no sea solo un camino recto
             score = forward_first_score + distance
