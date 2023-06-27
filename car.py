@@ -92,11 +92,11 @@ class Car:
         if self.__went_forward_first == None:
             self.__went_forward_first = self.__angle == 0
 
-        if not self.__went_backwards:
-            self.__went_backwards = (old_direction == np.dot(-1, self.__direction)).all()
-
         if self.__forward_only:
             self.__forward_only = old_direction == self.__direction
+
+        if not self.__ping_pong_at_least_one_time:
+            self.__ping_pong_at_least_one_time = (old_direction == np.dot(-1, self.__direction)).all()
     
     def __update_speed(self, action):
         if keyboard.is_pressed("s") or action == "s":
@@ -177,9 +177,9 @@ class Car:
         self.__position = [210, 260]
         self.__angle = 0
         self.__old_angle = 0
-        self.__went_backwards = False
         self.__went_forward_first = None
         self.__forward_only = True
+        self.__ping_pong_at_least_one_time = False
         self.__speed = 5
         self.__transformed_content = self.__content
         self.__direction = [round(math.cos(self.__angle)), round(math.sin(self.__angle))]
@@ -222,17 +222,20 @@ class Car:
     def is_alive(self):
         return self.__alive
     
-    def get_distance(self):
-        return self.__distance
-    
-    def went_backwards(self):
-        return self.__went_backwards
-    
     def went_forward_only(self):
         return self.__forward_only
     
     def went_forward_first(self):
         return self.__went_forward_first
+    
+    def ping_pong_at_least_one_time(self):
+        return self.__ping_pong_at_least_one_time
+    
+    def get_distance(self):
+        return self.__distance
+
+    def get_sensors(self):
+        return self.__sensors
 
     def transform(self, map):
         self.__update_sensors(map)
